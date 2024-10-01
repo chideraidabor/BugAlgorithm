@@ -13,8 +13,10 @@ import matplotlib.pyplot as plt
 #10. bug 2 will check if it crosses the mline then it will move foward to the goal
 #11. end if reaches the goal or cant find a way to goal
 
+#start and goal
 start = (0,0)
 goal = (4,4)
+
 rectangle_obstacles = [(1,1,3,1), # rec 1 - position 1,1 with width of 3 and height of 1
                        (4,4,2,2)] # rec 2 - position 3,3 with width of 2 and height of 2
 l_obstacles = [(2, 2, 1, 3), #circle 1 - center position at 2,2 with a radius of 1
@@ -51,9 +53,56 @@ def visualize_env(grid):
     plt.grid(True)
     plt.show()
 
-#create_environment(6, 6, rectangle_obstacles, circle_obstacles) 
-visualize_env(create_environment(6,6,rectangle_obstacles, l_obstacles))       
+def create_m_line(start, goal, rows, cols):
+    m_line = []
+    x1,y1 = start
+    x2,y2 = goal
 
+    num_steps = max(abs(x2 - x1), abs(y2 - y1))
+
+    for i in range(num_steps + 1):
+        t = i / num_steps
+        x = int(x1 + t * (x2 - x1))
+        y = int(y1 + t * (y2 - y1))
+        m_line.append((x, y))#store the cordinate in the mline array with the cordinates of steps to the goal
+        #return an array of stepf for the mline
+    return m_line
+
+def bug2(start, goal, grid):
+    #.shape gets the number of rows and columns
+    m_line = create_m_line(start, goal, grid.shape[0], grid.shape[1])
+    robot_position = start
+    path = [robot_position]# a list of all the coordinates taken to the goal
+
+    for next_step in m_line:
+        if grid[next_step[0], next_step[1]] == 1: #if an obstacle detected
+            print(f"Obstacle encountered at {next_step}, switching to boundary following.")
+            #boundary following code
+            break
+        else:
+            robot_position = next_step
+            path.append(robot_position)
+            print(f"Moving to {robot_position}")
+
+        if robot_position == goal:
+            print("Goal Reached!")
+            break
+    return path
+
+def follow_boundary_bug_2(grid, position):
+    row,col = position
+    #direction = 
+
+
+
+
+grid = create_environment(6, 6, rectangle_obstacles, l_obstacles)
+
+visualize_env(grid)
+
+path = bug2(start, goal, grid)
+
+print("Path followed by bug 2:", path)
 
 
 
