@@ -1,0 +1,153 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+# the position our bug will start at
+start = (0, 0)
+goal = (5, 5)
+
+# This is for rectangle obstacles
+def add_rectangle_obstacle(grid, rectangle_obstacles):
+    for rect in rectangle_obstacles:
+        top_left_row, top_left_col, width, height = rect
+        for i in range(top_left_row, top_left_row + height):
+            for j in range(top_left_col, top_left_col + width):
+                if i < grid.shape[0] and j < grid.shape[1]:
+                    grid[i, j] = 1
+
+# This is for L-shaped obstacles
+def add_lshape_obstacle(grid, l_obstacles):
+    for l_shape in l_obstacles:
+        top_left_row, top_left_col, width, height = l_shape
+        for i in range(top_left_row, top_left_row + height):
+            for j in range(top_left_col, top_left_col + width):
+                if i < grid.shape[0] and j < grid.shape[1]:
+                    grid[i, j] = 1
+
+# This is for circle-shaped obstacle - not the best circle
+def add_circle_obstacle(grid, center, radius):
+    for i in range(grid.shape[0]):
+        for j in range(grid.shape[1]):
+            if (i - center[0]) ** 2 + (j - center[1]) ** 2 <= radius ** 2:
+                grid[i, j] = 1
+
+def create_environment(rows, cols, goal, shape="rectangle"):
+    grid = np.zeros((rows, cols))  # Create an empty grid at first, 0 means free space and 1 means obstacle
+
+    if shape == "rectangle":
+        # Two spaced-out rectangle obstacles
+        rectangle_obstacles = [(1, 1, 2, 1), (4, 3, 2, 2)]  # Spacing them out more by adjusting coordinates
+        add_rectangle_obstacle(grid, rectangle_obstacles)
+
+    elif shape == "lshape":
+        l_obstacles = [(1, 1, 3, 1), (3, 1, 1, 3)]
+        add_lshape_obstacle(grid, l_obstacles)
+
+    elif shape == "circle":
+        center = (3, 3)  # Center of the circle
+        radius = 2       # Radius of the circle
+        add_circle_obstacle(grid, center, radius)
+
+    else:
+        print(f"Unknown shape '{shape}'")
+
+    # Ensure the goal is not inside an obstacle
+    if grid[goal[0], goal[1]] == 1:
+        print(f"Warning: The goal {goal} is inside an obstacle. Adjusting it.")
+        grid[goal[0], goal[1]] = 0  # Make sure the goal is not in an obstacle
+
+    return grid
+
+# Function to visualize the environment and the robot's path
+def visualize_env(grid, path=None):
+    plt.imshow(grid, cmap="gray_r")
+
+    if path is not None:
+        path_x, path_y = zip(*path)  # Unzip into x and y coordinates
+        plt.plot(path_y, path_x, color='blue', label='Robot Path', marker='o')
+
+    plt.scatter(start[1], start[0], marker='s', color='green', s=100, label='Start')
+    plt.scatter(goal[1], goal[0], marker='*', color='red', s=200, label='Goal')
+
+    plt.title("Environment")
+    plt.legend(loc='upper left')
+    plt.grid(True)
+    plt.show()
+
+# Animate Bug 0
+def follow_boundary_bug_0(grid, position, visited, goal):
+    row, col = position
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # Right, Down, Left, Up
+
+    for d_row, d_col in directions:
+        new_row, new_col = row + d_row, col + d_col
+        
+        if (0 <= new_row < grid.shape[0] and 0 <= new_col < grid.shape[1]):
+            if (new_row, new_col) == goal:
+                return (new_row, new_col)
+            if grid[new_row, new_col] == 0 and (new_row, new_col) not in visited:
+                visited.add((new_row, new_col))  # Mark the new position as visited
+                return (new_row, new_col)
+
+    return position  # If no valid moves, stay in place
+
+def bug0(start, goal, grid, max_steps=50):
+    robot_position = start
+    path = [robot_position]  # Track the robot's path
+    visited = set()
+    visited.add(robot_position)
+
+    steps = 0
+    while robot_position != goal and steps < max_steps:
+        steps += 1
+
+        next_row = robot_position[0] + np.sign(goal[0] - robot_position[0])
+        next_col = robot_position[1] + np.sign(goal[1] - robot_position[1])
+
+        if grid[next_row, next_col] == 1:  # Obstacle encountered
+            while robot_position != goal and steps < max_steps:
+                steps += 1
+                robot_position = follow_boundary_bug_0(grid, robot_position, visited, goal)
+                path.append(robot_position)
+                if robot_position == goal or steps >= max_steps:
+                    break
+        else:
+            robot_position = (next_row, next_col)
+            path.append(robot_position)
+
+        if robot_position == goal:
+            path.append(goal) 
+            break
+
+    return path
+
+def animate_bug0(grid, path, start, goal):
+    fig, ax = plt.subplots()
+    ax.imshow(grid, cmap="gray_r")
+    ax.scatter(start[1], start[0], marker='s', color='green', s=100, label='Start')
+    ax.scatter(goal[1], goal[0], marker='*', color='red', s=200, label='Goal')
+
+    robot_path, = ax.plot([], [], color='blue', marker='o', label='Robot Path')
+
+    def init():
+        robot_path.set_data([], [])
+        return robot_path,
+
+    def update(frame):
+        x, y = zip(*path[:frame])
+        robot_path.set_data(y, x)
+        return robot_path,
+
+    ani = animation.FuncAnimation(fig, update, frames=len(path), init_func=init, blit=True, interval=500)
+
+    plt.legend(loc='upper left')
+    plt.title("Bug0 Algorithm")
+    plt.grid(True)
+    plt.show()
+
+# pass the shape of your choice here! - but can only do circle, rectangle, or lshape
+grid = create_environment(7, 7, goal, shape="rectangle") 
+path = bug0(start, goal, grid, max_steps=50)
+
+# Animate the result
+animate_bug0(grid, path, start, goal)
