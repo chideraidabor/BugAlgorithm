@@ -1,2 +1,2 @@
-# BugAlgorithm
-Repository for my Assignment 1 in my Algorithmic robotics class. creating a bug algorithm
+# Bug Algorithm
+Implemented Bug 0 algorithm. It is a simple and greedy approach in robot motion planning. The core idea is for the robot to move directly towards the goal in a straight line unless it encounters an obstacle. Once the robot hits an obstacle, it follows the boundary of the obstacle until it can resume its direct path toward the goal. Unlike more advanced Bug algorithms (such as Bug 1 or Bug 2), Bug 0 does not retrace its steps or seek to minimize the path length. It simply follows the obstacle’s edge until it finds an opening to move toward the goal again.
